@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import os, requests, uuid, json, sys
 
+""" Imports environment variables from operating system with specified names 
+    (Further explained if you go through tutorials on Bing API) """
+
 key_var_name = 'TRANSLATOR_TEXT_SUBSCRIPTION_KEY'
 if not key_var_name in os.environ:
     raise Exception('Please set/export the environment variable: {}'.format(key_var_name))
@@ -21,14 +24,14 @@ translateAll = input("Translate all text in file to language of choice? (y/n): "
 if translateAll not in ['y', 'n']:
 	raise Exception("y or n wasn't inserted. Please insert either of these two choices.")
 
+# Request below scrapes all languages Bing translator can perform on
 languageURL = "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0"
 param = {'api-version': '3.0', 'scope': 'translation'}
-
 getRequest = requests.get(languageURL, param)
 langAbr = getRequest.json()['translation'].keys()
 
 if "n" in translateAll:
-	langOfFile = input("Which language present in text do you want to translate? (in Abbreviation): ")
+	langOfFile = input("Which language in the text do you want to translate? (in Abbreviation): ")
 	if langOfFile not in langAbr:
 		raise Exception("Incorrect abbreviation was provided, please provide right one.")
 
@@ -36,6 +39,7 @@ langOfTs = input("Which language do you wish to translate the text into? (in Abb
 if langOfFile not in langAbr:
 	raise Exception("Incorrect abbreviation was provided, please provide right one.")
 
+# Constructs URL neccesary for Bing translation to undergo
 path = '/translate?api-version=3.0'
 translateto = '&to=' + langOfTs
 constructed_url = endpoint + path + translateto
@@ -49,6 +53,7 @@ DIRECTORYNAME = 0
 filesTranslated = 1
 varname = "file"
 
+# Translates all files in given directory iff file is of appropriate extension
 for file in files:
 	foundextension = None
 	for extension in ALLOWEDEXTENSIONS:
@@ -57,9 +62,10 @@ for file in files:
 			break
 	if foundextension == None:
 		continue
-	splitfile = file.split(extension)
-	revamp = destPath+ '/' + splitfile[DIRECTORYNAME] + "trans" + foundextension
 
+	# For purposes of opening and creating translated file
+	splitfile = file.split(extension)
+	revamp = destPath + '/' + splitfile[DIRECTORYNAME] + "trans" + foundextension
 	originfile = open(destPath + '/'+ file, "r", encoding = 'utf-8')
 	revampfile = open(revamp, "w", encoding = 'utf-8')
 
@@ -67,8 +73,12 @@ for file in files:
 		body1 = [{'text': line}]
 		request = requests.post(constructed_url, headers = headers, json = body1)
 		response = request.json()
+
+		# Tries to retrieve translation of current line in file using Bing translater
 		try:
 			languageInText = response[0]["detectedLanguage"]["language"]
+
+		# Error occurs when indexing can't be accessed 
 		except KeyError:
 			print("The Bing Translator can't be accessed (Either you ran out of credits (to translate) or something went wrong in Bing's server")
 		else:
@@ -77,9 +87,11 @@ for file in files:
 			else:
 				revampfile.write(line) 
 
-	if filesTranslated > 1:
-		varname = varname + "s"
 	print("{} {} has been translated".format(filesTranslated, varname))
+
+	if filesTranslated == 1:
+		varname = varname + "s"
+
 	revampfile.close()
 	originfile.close()
 
